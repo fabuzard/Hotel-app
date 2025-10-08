@@ -32,9 +32,9 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(400, map[string]string{"error": "invalid request"})
 	}
-	user, err := h.service.LoginRequest(req)
+	token, err := h.service.LoginRequest(req)
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(200, user)
+	return c.JSON(200, map[string]string{"token": token})
 }

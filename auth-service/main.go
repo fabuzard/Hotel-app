@@ -15,6 +15,7 @@ import (
 	"auth-service/service"
 	"fmt"
 
+	jwtmw "auth-service/middleware"
 	"net/http"
 
 	// echomw "github.com/labstack/echo/v4/middleware"
@@ -39,6 +40,18 @@ func main() {
 	e.POST("/register", authHandler.Register)
 	e.POST("/login", authHandler.Login)
 
+	// test protected route
+	r := e.Group("/restricted")
+	r.Use(jwtmw.JWTAuth)
+	r.GET("", func(c echo.Context) error {
+		userID := c.Get("user_id")
+		username := c.Get("username")
+		return c.JSON(200, map[string]interface{}{
+			"user_id":  userID,
+			"username": username,
+			"message":  "You are in a restricted area",
+		})
+	})
 	fmt.Println("Connected to db")
 	e.Logger.Fatal(e.Start(":8080"))
 }

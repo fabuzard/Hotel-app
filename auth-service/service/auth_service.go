@@ -6,12 +6,14 @@ import (
 	"auth-service/repository"
 	"fmt"
 
+	jwtmw "auth-service/middleware"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService interface {
 	RegisterUser(dto.RegisterRequest) (model.User, error)
-	LoginRequest(dto.LoginRequest) (model.User, error)
+	LoginRequest(dto.LoginRequest) (string, error)
 }
 
 type authService struct {
@@ -47,16 +49,20 @@ func (s *authService) RegisterUser(req dto.RegisterRequest) (model.User, error) 
 	return s.repo.Create(&user)
 }
 
-func (s *authService) LoginRequest(req dto.LoginRequest) (model.User, error) {
+func (s *authService) LoginRequest(req dto.LoginRequest) (string, error) {
 	user, err := s.repo.GetByEmail(req.Email)
 	if err != nil {
-		return model.User{}, fmt.Errorf("invalid email or password")
+		return "", fmt.Errorf("invalid email or password")
 	}
 	// compare password
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
 	if err != nil {
-
-		return model.User{}, fmt.Errorf("invalid email or password")
+		return "", fmt.Errorf("invalid email or password")
 	}
-	return user, nil
+	// generate token
+	token, err := jwtmw.GenerateJwt(int(user.ID), user.Email)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
