@@ -9,7 +9,10 @@ package main
 
 import (
 	"auth-service/config"
+	"auth-service/handler"
 	models "auth-service/model"
+	"auth-service/repository"
+	"auth-service/service"
 	"fmt"
 
 	"net/http"
@@ -21,20 +24,20 @@ import (
 
 func main() {
 	config.LoadEnv()
-	config.DBInit()
+	db := config.DBInit()
 
 	e := echo.New()
 	config.DB.AutoMigrate(&models.User{})
+	authRepo := repository.NewAuthRepository(db)
+	authService := service.NewAuthService(authRepo)
+	authHandler := handler.NewAuthHandler(authService)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "🚀 Server running and DB connected!")
 	})
-	// e.POST("/test-error", func(c echo.Context) error {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, dto.ErrorResponse{
-	// 		Message: "invalid body data",
-	// 		Details: "missing `name` field",
-	// 	})
-	// })
+
+	e.POST("/register", authHandler.Register)
+	e.POST("/login", authHandler.Login)
 
 	fmt.Println("Connected to db")
 	e.Logger.Fatal(e.Start(":8080"))
