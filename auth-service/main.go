@@ -28,7 +28,7 @@ func main() {
 	db := config.DBInit()
 
 	e := echo.New()
-	config.DB.AutoMigrate(&models.User{})
+	config.DB.AutoMigrate(&models.Users{})
 	authRepo := repository.NewAuthRepository(db)
 	authService := service.NewAuthService(authRepo)
 	authHandler := handler.NewAuthHandler(authService)
@@ -52,6 +52,7 @@ func main() {
 			"message":  "You are in a restricted area",
 		})
 	})
+
 	fmt.Println("Connected to db")
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":8081"))
 }

@@ -7,8 +7,8 @@ import (
 )
 
 type AuthRepository interface {
-	Create(user *model.User) (model.User, error)
-	GetByEmail(string) (model.User, error)
+	Create(user *model.Users) (model.Users, error)
+	GetByEmail(string) (model.Users, error)
 }
 
 type authRepository struct {
@@ -19,19 +19,20 @@ func NewAuthRepository(db *gorm.DB) AuthRepository {
 	return &authRepository{db}
 }
 
-func (r *authRepository) Create(user *model.User) (model.User, error) {
+func (r *authRepository) Create(user *model.Users) (model.Users, error) {
 	result := r.db.Create(user)
 	if result.Error != nil {
-		return model.User{}, result.Error
+		return model.Users{}, result.Error
 	}
+
 	return *user, nil
 }
 
-func (r *authRepository) GetByEmail(email string) (model.User, error) {
-	var user model.User
+func (r *authRepository) GetByEmail(email string) (model.Users, error) {
+	var user model.Users
 	result := r.db.Where("email = ?", email).First(&user)
 	if result.Error != nil {
-		return model.User{}, result.Error
+		return model.Users{}, result.Error
 	}
 	return user, nil
 

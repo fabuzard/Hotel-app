@@ -24,7 +24,12 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(201, createdUser)
+	response := dto.RegisterResponse{
+		ID:       createdUser.ID,
+		Email:    createdUser.Email,
+		FullName: createdUser.FullName,
+	}
+	return c.JSON(201, response)
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {

@@ -12,7 +12,7 @@ import (
 )
 
 type AuthService interface {
-	RegisterUser(dto.RegisterRequest) (model.User, error)
+	RegisterUser(dto.RegisterRequest) (model.Users, error)
 	LoginRequest(dto.LoginRequest) (string, error)
 }
 
@@ -24,24 +24,24 @@ func NewAuthService(r repository.AuthRepository) AuthService {
 	return &authService{repo: r}
 }
 
-func (s *authService) RegisterUser(req dto.RegisterRequest) (model.User, error) {
+func (s *authService) RegisterUser(req dto.RegisterRequest) (model.Users, error) {
 	// check if already registered
 	_, err := s.repo.GetByEmail(req.Email)
 	if err == nil {
-		return model.User{}, fmt.Errorf("email already registered")
+		return model.Users{}, fmt.Errorf("email already registered")
 	}
 
 	if req.Password == "" {
-		return model.User{}, fmt.Errorf("password cannot be empty")
+		return model.Users{}, fmt.Errorf("password cannot be empty")
 	}
 	// hash password
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return model.User{}, err
+		return model.Users{}, err
 	}
 	req.Password = string(hashedBytes)
 	// create user
-	user := model.User{
+	user := model.Users{
 		Email:        req.Email,
 		PasswordHash: req.Password,
 		FullName:     req.FullName,
