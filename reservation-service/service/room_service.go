@@ -34,11 +34,11 @@ func (s *roomService) CreateRoom(req dto.CreateRoomRequest) (model.Room, error) 
 }
 
 func (s *roomService) GetRoomByID(id int) (model.Room, error) {
-	return s.repo.GetRoomByID(string(id))
+	return s.repo.GetRoomByID(id)
 }
 
 func (s *roomService) UpdateRoom(req dto.UpdateRoomRequest, id int) (model.Room, error) {
-	room, err := s.repo.GetRoomByID(string(id))
+	room, err := s.repo.GetRoomByID(id)
 	if err != nil {
 		return model.Room{}, err
 	}

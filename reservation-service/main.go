@@ -6,8 +6,10 @@ import (
 
 	"fmt"
 	"net/http"
+	"os"
 	"reservation-service/config"
 	"reservation-service/handler"
+	jwtmw "reservation-service/middleware"
 	"reservation-service/model"
 	"reservation-service/repository"
 	"reservation-service/service"
@@ -20,6 +22,8 @@ func main() {
 	db := config.DBInit()
 
 	e := echo.New()
+	r := e.Group("/api")
+	r.Use(jwtmw.JWTAuth)
 	config.DB.AutoMigrate(&model.Booking{}, model.Room{})
 	// room
 	roomRepo := repository.NewRoomRepository(db)
@@ -27,12 +31,18 @@ func main() {
 	roomHandler := handler.NewRoomHandler(roomService)
 
 	// create room routes
-	e.POST("/rooms", roomHandler.CreateRoom)
+	r.POST("/rooms", roomHandler.CreateRoom)
+	r.GET("/rooms", roomHandler.ListRooms)
+	r.GET("/rooms/:id", roomHandler.GetRoomByID)
+	// r.PUT("/rooms/:id", roomHandler.UpdateRoom)
+	// r.DELETE("/rooms/:id", roomHandler.DeleteRoom)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "🚀 Server running and DB connected!")
 	})
 
 	fmt.Println("Connected to db")
+	fmt.Println("JWT KEY IS = ")
+	fmt.Println(os.Getenv("JWT_SECRET"))
 	e.Logger.Fatal(e.Start(":8082"))
 }

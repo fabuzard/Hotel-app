@@ -14,6 +14,7 @@ import (
 	"auth-service/repository"
 	"auth-service/service"
 	"fmt"
+	"os"
 
 	jwtmw "auth-service/middleware"
 	"net/http"
@@ -52,7 +53,7 @@ func main() {
 			"message":  "You are in a restricted area",
 		})
 	})
-
+	fmt.Println(os.Getenv("JWT_SECRET"))
 	fmt.Println("Connected to db")
 	e.Logger.Fatal(e.Start(":8081"))
 }

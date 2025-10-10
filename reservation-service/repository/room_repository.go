@@ -8,7 +8,7 @@ import (
 
 type RoomRepository interface {
 	CreateRoom(room *model.Room) (model.Room, error)
-	GetRoomByID(id string) (model.Room, error)
+	GetRoomByID(id int) (model.Room, error)
 	UpdateRoom(room *model.Room) (model.Room, error)
 	DeleteRoom(id string) error
 	ListRooms() ([]model.Room, error)
@@ -29,7 +29,7 @@ func (r *roomRepository) CreateRoom(room *model.Room) (model.Room, error) {
 	return *room, nil
 }
 
-func (r *roomRepository) GetRoomByID(id string) (model.Room, error) {
+func (r *roomRepository) GetRoomByID(id int) (model.Room, error) {
 	var room model.Room
 	result := r.db.First(&room, "id = ?", id)
 	if result.Error != nil {
