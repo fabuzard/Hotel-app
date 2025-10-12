@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"payment-service/client"
 	"payment-service/model"
 	"payment-service/repository"
@@ -12,7 +13,7 @@ type PaymentService interface {
 	UpdatePayment(payment model.Payment) (model.Payment, error)
 	DeletePayment(id int) error
 	ListPaymentByUserID(userID int) ([]model.Payment, error)
-	SimulatePaymentWebhook(paymentID int, authToken string) error
+	SimulatePaymentWebhook(paymentID int, authToken string) (model.Payment, error)
 }
 
 type paymentService struct {
@@ -65,24 +66,27 @@ func (s *paymentService) CreatePayment(payment model.Payment, userID int, authTo
 }
 
 // Simulate webhook
-func (s *paymentService) SimulatePaymentWebhook(paymentID int, authToken string) error {
+func (s *paymentService) SimulatePaymentWebhook(paymentID int, authToken string) (model.Payment, error) {
 	payment, err := s.repo.GetPaymentByID(paymentID)
 	if err != nil {
-		return err
+		return model.Payment{}, err
+	}
+	if payment.Status == "paid" {
+		return model.Payment{}, fmt.Errorf("payment is already paid")
 	}
 	payment.Status = "paid"
 	updatedPayment, err := s.repo.UpdatePayment(&payment)
 	if err != nil {
-		return err
+		return model.Payment{}, err
 	}
 
 	// update booking status to confirmed
 	err = client.UpdateBookingStatus(uint(updatedPayment.BookingID), "paid", authToken)
 	if err != nil {
-		return err
+		return model.Payment{}, err
 	}
 
-	return nil
+	return updatedPayment, nil
 }
 func (s *paymentService) GetPaymentByID(id int) (model.Payment, error) {
 	return s.repo.GetPaymentByID(id)

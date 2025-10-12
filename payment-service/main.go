@@ -6,7 +6,6 @@ import (
 
 	"fmt"
 	"net/http"
-	"os"
 	"payment-service/config"
 	"payment-service/handler"
 	jwtmw "payment-service/middleware"
@@ -48,7 +47,5 @@ func main() {
 	r.POST("/pay", paymentHandler.CreatePayment)
 	r.POST("/webhook", paymentHandler.SimulateWebhook)
 	fmt.Println("Connected to db")
-	fmt.Println("JWT KEY IS = ")
-	fmt.Println(os.Getenv("JWT_SECRET"))
 	e.Logger.Fatal(e.Start(":8083"))
 }

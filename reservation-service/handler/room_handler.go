@@ -90,3 +90,17 @@ func (h *RoomHandler) UpdateRoom(c echo.Context) error {
 	}
 	return c.JSON(200, response)
 }
+
+// delete room by id
+func (h *RoomHandler) DeleteRoom(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": "invalid room ID"})
+	}
+	err = h.service.DeleteRoom(id)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, map[string]string{"message": "room deleted successfully"})
+}

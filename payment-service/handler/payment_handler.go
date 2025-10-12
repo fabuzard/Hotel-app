@@ -44,9 +44,9 @@ func (h *PaymentHandler) SimulateWebhook(c echo.Context) error {
 		return c.JSON(400, map[string]string{"error": "invalid request"})
 	}
 	authHeader := c.Request().Header.Get("Authorization")
-	err := h.service.SimulatePaymentWebhook(req.PaymentID, authHeader)
+	payment, err := h.service.SimulatePaymentWebhook(req.PaymentID, authHeader)
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(200, map[string]string{"message": "webhook processed"})
+	return c.JSON(200, map[string]interface{}{"message": "webhook procssed", "payment": payment})
 }

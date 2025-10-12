@@ -6,7 +6,6 @@ import (
 
 	"fmt"
 	"net/http"
-	"os"
 	"reservation-service/config"
 	"reservation-service/handler"
 	jwtmw "reservation-service/middleware"
@@ -40,28 +39,29 @@ func main() {
 	r.POST("/rooms", roomHandler.CreateRoom)
 	r.GET("/rooms", roomHandler.ListRooms)
 	r.GET("/rooms/:id", roomHandler.GetRoomByID)
-	// r.PUT("/rooms/:id", roomHandler.UpdateRoom)
-	// r.DELETE("/rooms/:id", roomHandler.DeleteRoom)
+	r.PUT("/rooms/:id", roomHandler.UpdateRoom)
+	r.DELETE("/rooms/:id", roomHandler.DeleteRoom)
 	// booking routes
 	r.POST("/bookings", bookingHandler.CreateBooking)
 	r.GET("/bookings/:id", bookingHandler.GetBookingByID)
 	r.PUT("/webhooks/bookings/:id", bookingHandler.WebhookUpdate)
-	// r.DELETE("/bookings/:id", bookingHandler.DeleteBooking)
-
+	r.DELETE("/bookings/:id", bookingHandler.DeleteBooking)
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "🚀 Server running and DB connected!")
 	})
+	// check in
+	r.PUT("/checkin/:id", bookingHandler.Checkin)
+	// check out
+	r.PUT("/checkout/:id", bookingHandler.Checkout)
 
 	// run scheduler
 	c := cron.New()
-	c.AddFunc("@every 1m", func() {
-		worker.StartScheduler()
+	c.AddFunc("0 10 * * *", func() {
+		worker.StartScheduler(db)
 	})
 	c.Start()
 	defer c.Stop()
 
 	fmt.Println("Connected to db")
-	fmt.Println("JWT KEY IS = ")
-	fmt.Println(os.Getenv("JWT_SECRET"))
 	e.Logger.Fatal(e.Start(":8082"))
 }

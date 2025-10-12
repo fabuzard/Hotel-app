@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"net/http"
 	"reservation-service/dto"
 	"reservation-service/model"
 	"reservation-service/service"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -141,4 +143,95 @@ func (h *BookingHandler) WebhookUpdate(c echo.Context) error {
 		TotalAmount:  updatedBooking.TotalAmount,
 	}
 	return c.JSON(200, response)
+}
+
+func (h *BookingHandler) DeleteBooking(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": "invalid booking ID"})
+	}
+	err = h.service.DeleteBooking(id)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, map[string]string{"message": "booking deleted"})
+}
+
+func (h *BookingHandler) Checkin(c echo.Context) error {
+	userIDFloat, ok := c.Get("user_id").(float64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"status":  "error",
+			"message": "unauthorized: invalid token or missing user ID",
+		})
+	}
+	userID := uint(userIDFloat)
+
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status":  "error",
+			"message": "invalid booking ID",
+		})
+	}
+
+	booking, err := h.service.Checkin(id, int(userID))
+	if err != nil {
+		statusCode := http.StatusBadRequest
+		if strings.Contains(err.Error(), "unauthorized") {
+			statusCode = http.StatusUnauthorized
+		} else if strings.Contains(err.Error(), "not available") {
+			statusCode = http.StatusConflict
+		}
+		return c.JSON(statusCode, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "Check-in successful",
+		"data":    booking,
+	})
+}
+
+func (h *BookingHandler) Checkout(c echo.Context) error {
+	userIDFloat, ok := c.Get("user_id").(float64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"status":  "error",
+			"message": "unauthorized: invalid token or missing user ID",
+		})
+	}
+	userID := uint(userIDFloat)
+
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status":  "error",
+			"message": "invalid booking ID",
+		})
+	}
+
+	booking, err := h.service.Checkout(id, int(userID))
+	if err != nil {
+		statusCode := http.StatusBadRequest
+		if strings.Contains(err.Error(), "unauthorized") {
+			statusCode = http.StatusUnauthorized
+		}
+		return c.JSON(statusCode, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "Checkout successful",
+		"data":    booking,
+	})
 }

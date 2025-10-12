@@ -5,6 +5,7 @@ import (
 	"reservation-service/dto"
 	"reservation-service/model"
 	"reservation-service/repository"
+	"time"
 )
 
 type BookingService interface {
@@ -14,6 +15,8 @@ type BookingService interface {
 	DeleteBooking(int) error
 	ListBookings() ([]dto.BookingResponse, error)
 	UpdateWebhookStatus(id int, status string, userID int) (model.Booking, error)
+	Checkin(bookingID int, userID int) (model.Booking, error)
+	Checkout(bookingID int, userID int) (model.Booking, error)
 }
 
 type bookingService struct {
@@ -107,6 +110,74 @@ func (s *bookingService) UpdateWebhookStatus(id int, status string, userID int) 
 		return model.Booking{}, fmt.Errorf("booking is already confirmed, you can now check-in")
 	}
 	booking.Status = status
+
+	return s.repo.UpdateBooking(&booking)
+}
+
+func (s *bookingService) Checkin(bookingID int, userID int) (model.Booking, error) {
+	booking, err := s.repo.GetBookingByID(bookingID)
+	if err != nil {
+		return model.Booking{}, err
+	}
+	if booking.UserID != uint(userID) {
+		return model.Booking{}, fmt.Errorf("unauthorized you can only check-in your own booking")
+	}
+	if booking.Status == "checked_in" {
+		return model.Booking{}, fmt.Errorf("you have already checked in")
+	}
+	if booking.Status == "completed" {
+		return model.Booking{}, fmt.Errorf("you have already checked out")
+	}
+	// check if booking pending for payment
+	if booking.Status == "pending" {
+		return model.Booking{}, fmt.Errorf("your booking is still pending, please complete the payment first")
+	}
+	// check if today is the check-in date at 10:00 AM
+	today := time.Now().Truncate(24 * time.Hour)
+	checkinDate := booking.CheckinDate.Truncate(24 * time.Hour)
+	if today.Before(checkinDate) {
+		return model.Booking{}, fmt.Errorf("you can only check-in on the check-in date")
+	}
+	// check if room is available
+	room, err := s.repo.GetRoomByID(int(booking.RoomID))
+	if err != nil {
+		return model.Booking{}, err
+	}
+	if room.Status != "available" {
+		return model.Booking{}, fmt.Errorf("room is not available, cannot check-in")
+	}
+	room.Status = "unavailable"
+	if err := s.repo.UpdateRoomStatus(int(room.ID), room.Status); err != nil {
+		return model.Booking{}, fmt.Errorf("failed to mark room unavailable :%v", err)
+	}
+	booking.Status = "checked_in"
+	return s.repo.UpdateBooking(&booking)
+}
+
+func (s *bookingService) Checkout(bookingID int, userID int) (model.Booking, error) {
+	booking, err := s.repo.GetBookingByID(bookingID)
+	if err != nil {
+		return model.Booking{}, err
+	}
+	if booking.UserID != uint(userID) {
+		return model.Booking{}, fmt.Errorf("unauthorized you can only check-out your own booking")
+	}
+	if booking.Status != "checked_in" {
+		return model.Booking{}, fmt.Errorf("booking is not checked-in, cannot check-out")
+	}
+	// check if status is completed
+	if booking.Status == "completed" {
+		return model.Booking{}, fmt.Errorf("you have already checked out")
+	}
+	booking.Status = "completed"
+	room, err := s.repo.GetRoomByID(int(booking.RoomID))
+	if err != nil {
+		return model.Booking{}, err
+	}
+	room.Status = "available"
+	if err := s.repo.UpdateRoomStatus(int(room.ID), room.Status); err != nil {
+		return model.Booking{}, fmt.Errorf("failed to mark room available :%v", err)
+	}
 
 	return s.repo.UpdateBooking(&booking)
 }
