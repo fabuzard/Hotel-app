@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"reservation-service/dto"
 	"reservation-service/model"
 	"reservation-service/repository"
@@ -30,6 +31,11 @@ func (s *roomService) CreateRoom(req dto.CreateRoomRequest) (model.Room, error) 
 		MaxGuest:      req.MaxGuest,
 		Status:        "available",
 	}
+	// check if room number already exists
+	existingRoom, err := s.repo.GetRoomByNumber(req.RoomNumber)
+	if err == nil && existingRoom.ID != 0 {
+		return model.Room{}, fmt.Errorf("room number %d already exists", req.RoomNumber)
+	}
 	return s.repo.CreateRoom(&room)
 }
 
@@ -51,8 +57,7 @@ func (s *roomService) UpdateRoom(req dto.UpdateRoomRequest, id int) (model.Room,
 }
 
 func (s *roomService) DeleteRoom(id int) error {
-	return s.repo.DeleteRoom(string(id))
-
+	return s.repo.DeleteRoom(id)
 }
 
 func (s *roomService) ListRooms() ([]dto.RoomResponse, error) {

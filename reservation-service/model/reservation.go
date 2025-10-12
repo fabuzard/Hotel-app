@@ -15,12 +15,12 @@ type Room struct {
 
 // Bookings table
 type Booking struct {
-	ID           string    `gorm:"primaryKey;autoIncrement"`
-	UserID       string    `gorm:"type:uuid;not null" json:"user_id"`
-	RoomID       string    `gorm:"type:uuid;not null" json:"room_id"`
-	CheckinDate  time.Time `gorm:"type:date" json:"checkin_date"`
-	CheckoutDate time.Time `gorm:"type:date" json:"checkout_date"`
-	Status       string    `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, confirmed, checked_in, cancelled
-	TotalAmount  float64   `json:"total_amount"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID           uint      `gorm:"primaryKey;autoIncrement"`
+	UserID       uint      `gorm:"not null"` // references auth_service.users.id
+	RoomID       uint      `gorm:"not null"` // references rooms.id
+	CheckinDate  time.Time `gorm:"type:date"`
+	CheckoutDate time.Time `gorm:"type:date"`
+	Status       string    `gorm:"type:varchar(20);default:'pending'"`
+	TotalAmount  float64
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }

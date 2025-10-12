@@ -10,8 +10,9 @@ type RoomRepository interface {
 	CreateRoom(room *model.Room) (model.Room, error)
 	GetRoomByID(id int) (model.Room, error)
 	UpdateRoom(room *model.Room) (model.Room, error)
-	DeleteRoom(id string) error
+	DeleteRoom(id int) error
 	ListRooms() ([]model.Room, error)
+	GetRoomByNumber(roomNumber int) (model.Room, error)
 }
 
 type roomRepository struct {
@@ -44,7 +45,7 @@ func (r *roomRepository) UpdateRoom(room *model.Room) (model.Room, error) {
 	}
 	return *room, nil
 }
-func (r *roomRepository) DeleteRoom(id string) error {
+func (r *roomRepository) DeleteRoom(id int) error {
 	result := r.db.Delete(&model.Room{}, "id = ?", id)
 	return result.Error
 }
@@ -56,4 +57,13 @@ func (r *roomRepository) ListRooms() ([]model.Room, error) {
 		return nil, result.Error
 	}
 	return rooms, nil
+}
+
+func (r *roomRepository) GetRoomByNumber(roomNumber int) (model.Room, error) {
+	var room model.Room
+	result := r.db.First(&room, "room_number = ?", roomNumber)
+	if result.Error != nil {
+		return model.Room{}, result.Error
+	}
+	return room, nil
 }
