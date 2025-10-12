@@ -31,11 +31,11 @@ func (h *PaymentHandler) CreatePayment(c echo.Context) error {
 	payment := model.Payment{
 		BookingID: uint(req.BookingID),
 	}
-	paymentURL, err := h.service.CreatePayment(payment, userID, authHeader)
+	paymentRes, err := h.service.CreatePayment(payment, userID, authHeader)
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(201, map[string]string{"payment_url": paymentURL})
+	return c.JSON(201, map[string]interface{}{"payment": paymentRes})
 }
 
 func (h *PaymentHandler) SimulateWebhook(c echo.Context) error {

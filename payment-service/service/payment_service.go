@@ -8,7 +8,7 @@ import (
 )
 
 type PaymentService interface {
-	CreatePayment(payment model.Payment, userID int, authToken string) (string, error)
+	CreatePayment(payment model.Payment, userID int, authToken string) (model.Payment, error)
 	GetPaymentByID(id int) (model.Payment, error)
 	UpdatePayment(payment model.Payment) (model.Payment, error)
 	DeletePayment(id int) error
@@ -26,21 +26,21 @@ func NewPaymentService(r repository.PaymentRepository) PaymentService {
 	}
 }
 
-func (s *paymentService) CreatePayment(payment model.Payment, userID int, authToken string) (string, error) {
+func (s *paymentService) CreatePayment(payment model.Payment, userID int, authToken string) (model.Payment, error) {
 	// get the booking id from reservation service
 	booking, err := client.GetBookingByID(payment.BookingID, authToken)
 	if err != nil {
-		return "", err
+		return model.Payment{}, err
 	}
 
 	// validate the user id matches the booking user id
 	if booking.UserID != uint(userID) {
-		return "", err
+		return model.Payment{}, err
 	}
 
 	// Validate booking status is pending and date is valid
 	if booking.Status != "pending" {
-		return "", err
+		return model.Payment{}, err
 	}
 	// set amount from booking total amount
 	payment.Amount = booking.TotalAmount
@@ -48,7 +48,7 @@ func (s *paymentService) CreatePayment(payment model.Payment, userID int, authTo
 	// process payment with xendit
 	url, err := client.CreateXenditPaymentURL(booking.ID, payment.Amount, "")
 	if err != nil {
-		return "", err
+		return model.Payment{}, err
 	}
 	// set provider and provider payment id
 	payment.Provider = "xendit"
@@ -56,13 +56,13 @@ func (s *paymentService) CreatePayment(payment model.Payment, userID int, authTo
 	payment.Status = "pending"
 	payment.PaymentURL = url
 	// save payment record to db
-	_, err = s.repo.CreatePayment(&payment)
+	paymentRes, err := s.repo.CreatePayment(&payment)
 	if err != nil {
-		return "", err
+		return model.Payment{}, err
 	}
 
 	// return payment URL from xendit
-	return url, nil
+	return paymentRes, nil
 }
 
 // Simulate webhook

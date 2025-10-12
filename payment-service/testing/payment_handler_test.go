@@ -19,11 +19,16 @@ type dummyService struct {
 	shouldFail bool
 }
 
-func (d *dummyService) CreatePayment(payment model.Payment, userID int, auth string) (string, error) {
+func (d *dummyService) CreatePayment(payment model.Payment, userID int, auth string) (model.Payment, error) {
 	if d.shouldFail {
-		return "", errors.New("failed to create payment")
+		return model.Payment{}, errors.New("failed to create payment")
 	}
-	return "https://dummy-payment-url", nil
+	return model.Payment{
+		ID:         1,
+		Status:     "pending",
+		BookingID:  1,
+		PaymentURL: "https://dummy-payment-url",
+	}, nil
 }
 
 func (d *dummyService) SimulatePaymentWebhook(paymentID int, auth string) (model.Payment, error) {
